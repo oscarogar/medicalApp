@@ -10,9 +10,6 @@ import 'package:rxdart/rxdart.dart';
 
 class DoctorsStream extends StatefulWidget {
   static const String id = 'doctors_stream';
-
-  ///final GeoLocationService _geoLocationService = GeoLocationService();
-
   @override
   _DoctorsStreamState createState() => _DoctorsStreamState();
 }
@@ -67,6 +64,18 @@ class _DoctorsStreamState extends State<DoctorsStream> {
 //    });
 //  }
 
+  //add querying phone geopoints
+  void addMyLocation() async {
+    var pos = await geoLocator.getCurrentPosition();
+    double userLatitude = pos.latitude;
+    double userLongitude = pos.longitude;
+    GeoFirePoint myLocation =
+        geoFlutterFire.point(latitude: userLatitude, longitude: userLongitude);
+    _fireStore
+        .collection('doctorsLocation')
+        .add({'name': 'Doctor', 'position': myLocation.data});
+  }
+
   _startQuery() async {
     try {
       // Get querying phone location
@@ -76,13 +85,13 @@ class _DoctorsStreamState extends State<DoctorsStream> {
       // get center points from users location
       GeoFirePoint center = geoFlutterFire.point(
           latitude: userLatitude, longitude: userLongitude);
-      stream = radius.switchMap((rad) {
-        //make a firestore reference
-        var ref = _fireStore.collection('doctorsLocation');
-        //query data from firestore
-        return geoFlutterFire.collection(collectionRef: ref).within(
-            center: center, radius: rad, field: 'position', strictMode: true);
-      });
+//      stream = radius.switchMap((rad) {
+//        //make a firestore reference
+//        var ref = _fireStore.collection('doctorsLocation');
+//        //query data from firestore
+//        return geoFlutterFire.collection(collectionRef: ref).within(
+//            center: center, radius: rad, field: 'position', strictMode: true);
+//      });
       // subscribe to query
 //      subscription = radius.switchMap((rad) {
 //        return geoflutterfire.collection(collectionRef: ref).within(
@@ -91,15 +100,13 @@ class _DoctorsStreamState extends State<DoctorsStream> {
 //        _updateMarkers(documentList);
 //      });
       //radius.add(5);
-//      double radius = 5;
-//      String field = 'position';
-//      var ref = _firestore.collection('doctorsLocation');
-//      Stream<List<DocumentSnapshot>> stream = geoflutterfire
-//          .collection(collectionRef: ref)
-//          .within(
-//              center: center, radius: radius, field: field, strictMode: true);
-////      stream//      });.listen((List<DocumentSnapshot> documentList) {
-////        _updateMarkers(documentList);
+      double radius = 30;
+      String field = 'position';
+      var ref = _fireStore.collection('doctorsLocation');
+      stream = geoFlutterFire.collection(collectionRef: ref).within(
+          center: center, radius: radius, field: field, strictMode: true);
+//      stream//      });.listen((List<DocumentSnapshot> documentList) {
+//        _updateMarkers(documentList);
     } catch (e) {
       print(e);
     }
@@ -132,6 +139,7 @@ class _DoctorsStreamState extends State<DoctorsStream> {
   void initState() {
     super.initState();
     getCurrentPosition();
+//    addMyLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startQuery();
     });
